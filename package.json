@@ -1,6 +1,6 @@
 {
   "name": "music-lib",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Music theory, notation rendering and audio shared by the codedproject music apps",
   "license": "MIT",
   "packageManager": "yarn@1.22.21",
@@ -43,7 +43,6 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --module commonjs --declaration false --outDir dist/cjs && cp src/react/*.css dist/esm/react/ && cp src/react/*.css dist/cjs/react/ && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "prepare": "yarn -s build",
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },

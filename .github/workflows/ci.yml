@@ -17,3 +17,6 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn test
       - run: yarn build
+      # dist/ is committed, so the apps can install the library straight from a tag
+      - name: Check dist/ is built from the source
+        run: git diff --exit-code --stat -- dist && test -z "$(git status --porcelain -- dist)"

@@ -17,10 +17,11 @@ Import the stave's styles with `import "music-lib/react/stave.css"`.
 ## Using it from an app
 
 ```json
-"dependencies": { "music-lib": "git+https://github.com/thecodedproject/music-lib.git#v0.1.0" }
+"dependencies": { "music-lib": "github:thecodedproject/music-lib#v0.1.1" }
 ```
 
-Installing from git (a `git+https` URL, so yarn clones it rather than downloading a tarball) runs `prepare`, which builds `dist/` (ESM for bundlers, CommonJS for jest).
+`dist/` (ESM for bundlers, CommonJS for jest) is committed, so installing from a tag needs no build
+step. Run `yarn build` and commit `dist/` with every change to `src/`; CI fails if they differ.
 
 To work on the library and an app together, link it instead: `"music-lib": "link:../music-lib"`
 and run `yarn build` here after changes. A linked copy brings its own `react` and `@types/react`
