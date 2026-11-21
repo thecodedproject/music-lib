@@ -63,4 +63,30 @@ describe("NotePlayer", () => {
     player.stop()
     await expect(done).resolves.toBeUndefined()
   })
+
+  it("swaps in a fresh context, on the next tap, for one cut off in the background", () => {
+    const contexts: FakeContext[] = []
+    const player = new NotePlayer(() => {
+      const ctx = new FakeContext()
+      contexts.push(ctx)
+      return ctx as unknown as AudioContext
+    })
+    player.ensure()
+    // a running context is kept
+    player.revive()
+    expect(contexts.length).toBe(1)
+
+    // iOS suspends it and won't resume it
+    const old = contexts[0] as any
+    old.close = () => Promise.resolve()
+    old.resume = () => Promise.resolve()
+    old.state = "suspended"
+    old.onstatechange()
+    player.revive()
+    expect(contexts.length).toBe(2)
+
+    player.playNote(60)
+    expect(contexts[1].started.length).toBeGreaterThan(0)
+    expect(contexts[0].started.length).toBe(0)
+  })
 })

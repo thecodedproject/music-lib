@@ -17,9 +17,12 @@ export declare class NotePlayer {
     private out?;
     private timers;
     private finish?;
+    private interrupted;
     volume: number;
     voice: Voice;
     constructor(newContext?: () => AudioContext);
+    private resume;
+    revive(): void;
     ensure(): AudioContext;
     playSequence(steps: SequenceNote[], opts?: PlayOptions): Promise<void>;
     playNote(midi: number, seconds?: number): void;

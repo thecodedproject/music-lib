@@ -48,29 +48,80 @@ export class NotePlayer {
     constructor(newContext = newAudioContext) {
         this.newContext = newContext;
         this.timers = [];
+        // set when the audio may have been cut off, by the app going into the background or
+        // by iOS taking the audio away (a phone call, say)
+        this.interrupted = false;
         this.volume = 0.8;
         this.voice = struckVoice;
+        if (typeof window == "undefined" || typeof document == "undefined") {
+            return;
+        }
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState == "hidden") {
+                this.interrupted = true;
+                this.stop();
+            }
+            else {
+                this.resume();
+            }
+        });
+        window.addEventListener("pageshow", () => this.resume());
+        // these run before any button's own handler, so a tap on Play finds the audio
+        // already back
+        for (const type of ["pointerdown", "touchend", "click", "keydown"]) {
+            window.addEventListener(type, () => this.revive(), { capture: true });
+        }
+    }
+    resume() {
+        var _a, _b;
+        (_b = (_a = this.ctx) === null || _a === void 0 ? void 0 : _a.resume()) === null || _b === void 0 ? void 0 : _b.catch(() => undefined);
+    }
+    // revive brings back audio that was cut off. iOS can leave the old context suspended
+    // (or "interrupted") however often it's asked to resume, so inside a tap, which is
+    // when a browser allows new audio, it's swapped for a fresh one.
+    revive() {
+        var _a, _b, _c;
+        const ctx = this.ctx;
+        if (ctx == undefined || !this.interrupted) {
+            return;
+        }
+        this.interrupted = false;
+        if (ctx.state == "running") {
+            return;
+        }
+        this.stop();
+        (_a = this.out) === null || _a === void 0 ? void 0 : _a.disconnect();
+        (_c = (_b = ctx.close) === null || _b === void 0 ? void 0 : _b.call(ctx)) === null || _c === void 0 ? void 0 : _c.catch(() => undefined);
+        this.ctx = undefined;
+        this.out = undefined;
+        this.ensure();
     }
     // ensure opens the audio, which browsers only allow in answer to a tap or click: call
     // it from one before the first sound is wanted.
     ensure() {
         if (this.ctx == undefined) {
-            // on iOS, play even with the ringer switched off
-            const nav = typeof navigator != "undefined" ? navigator : undefined;
-            if ((nav === null || nav === void 0 ? void 0 : nav.audioSession) != undefined) {
-                try {
-                    nav.audioSession.type = "playback";
+            const ctx = this.newContext();
+            ctx.onstatechange = () => {
+                if (ctx.state != "running") {
+                    this.interrupted = true;
                 }
-                catch {
-                    // not supported here
-                }
-            }
-            this.ctx = this.newContext();
-            this.out = this.ctx.createGain();
-            this.out.connect(this.ctx.destination);
+            };
+            this.ctx = ctx;
+            this.out = ctx.createGain();
+            this.out.connect(ctx.destination);
         }
-        if (this.ctx.state == "suspended") {
-            this.ctx.resume();
+        // on iOS, play even with the ringer switched off
+        const nav = typeof navigator != "undefined" ? navigator : undefined;
+        if ((nav === null || nav === void 0 ? void 0 : nav.audioSession) != undefined) {
+            try {
+                nav.audioSession.type = "playback";
+            }
+            catch {
+                // not supported here
+            }
+        }
+        if (this.ctx.state != "running") {
+            this.resume();
         }
         this.out.gain.value = this.volume;
         return this.ctx;
